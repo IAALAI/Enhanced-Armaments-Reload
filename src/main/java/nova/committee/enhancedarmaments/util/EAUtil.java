@@ -20,20 +20,20 @@ public class EAUtil {
                     || item == Items.GOLDEN_AXE || item == Items.GOLDEN_HOE || item == Items.GOLDEN_SWORD || item == Items.GOLDEN_BOOTS || item == Items.GOLDEN_CHESTPLATE || item == Items.GOLDEN_HELMET || item == Items.GOLDEN_LEGGINGS
                     || item == Items.STONE_AXE || item == Items.STONE_HOE || item == Items.STONE_SWORD
                     || item == Items.WOODEN_AXE || item == Items.WOODEN_HOE || item == Items.WOODEN_SWORD
-                    || item == Items.BOW || item == Items.CROSSBOW
+                    || item == Items.BOW || item == Items.CROSSBOW || item == Items.ARROW
                     || item == Items.TRIDENT
                     || item == Items.NETHERITE_AXE || item == Items.NETHERITE_HOE || item == Items.NETHERITE_SWORD || item == Items.NETHERITE_BOOTS || item == Items.NETHERITE_CHESTPLATE || item == Items.NETHERITE_HELMET || item == Items.NETHERITE_LEGGINGS
                     || item == Items.CHAINMAIL_BOOTS || item == Items.CHAINMAIL_CHESTPLATE || item == Items.CHAINMAIL_HELMET || item == Items.CHAINMAIL_LEGGINGS)
                 return false;
 
-        if (!Config.extraItems.isEmpty()) {
+        if (!EAConfig.extraItems.isEmpty()) {
             boolean allowed = false;
             for (int k = 0; k < EAConfig.extraItems.size(); k++)
                 if (Objects.equals(ForgeRegistries.ITEMS.getKey(EAConfig.extraItems.get(k)), ForgeRegistries.ITEMS.getKey(item)))
                     allowed = true;
-            return allowed || item instanceof SwordItem || item instanceof AxeItem || item instanceof HoeItem || item instanceof BowItem || item instanceof ArmorItem || item instanceof CrossbowItem || item instanceof TridentItem;
+            return allowed || item instanceof SwordItem || item instanceof AxeItem || item instanceof HoeItem || item instanceof BowItem || item instanceof ArmorItem || item instanceof CrossbowItem || item instanceof TridentItem || item instanceof ArrowItem;
         } else
-            return item instanceof SwordItem || item instanceof AxeItem || item instanceof HoeItem || item instanceof BowItem || item instanceof ArmorItem || item instanceof CrossbowItem || item instanceof TridentItem;
+            return item instanceof SwordItem || item instanceof AxeItem || item instanceof HoeItem || item instanceof BowItem || item instanceof ArmorItem || item instanceof CrossbowItem || item instanceof TridentItem || item instanceof ArrowItem;
     }
 
     public static boolean canEnhanceWeapon(Item item) {
@@ -58,7 +58,7 @@ public class EAUtil {
      * @return 物品可以得到远程增强
      */
     public static boolean canEnhanceRanged(Item item) {
-        return canEnhance(item) && (item instanceof BowItem || item instanceof CrossbowItem || item instanceof TridentItem);
+        return canEnhance(item) && (item instanceof BowItem || item instanceof CrossbowItem || item instanceof TridentItem || item instanceof ArrowItem);
     }
 
     public static boolean canEnhanceArmor(Item item) {
