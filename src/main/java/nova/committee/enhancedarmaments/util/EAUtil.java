@@ -61,8 +61,14 @@ public class EAUtil {
         return canEnhance(item) && (item instanceof BowItem || item instanceof CrossbowItem || item instanceof TridentItem || item instanceof ArrowItem);
     }
 
+    /**
+     * 装具
+     *
+     * @param item 物品
+     * @return 物品可以得到防御增强
+     */
     public static boolean canEnhanceArmor(Item item) {
-        return canEnhance(item) && item instanceof ArmorItem;
+        return canEnhance(item) && (item instanceof ArmorItem || item instanceof ShieldItem);
     }
 
     public static boolean isDamageSourceAllowed(DamageSource damageSource) {
