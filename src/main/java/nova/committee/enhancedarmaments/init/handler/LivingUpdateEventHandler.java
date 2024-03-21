@@ -1,6 +1,8 @@
 package nova.committee.enhancedarmaments.init.handler;
 
+import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.FrostWalkerEnchantment;
@@ -64,7 +66,7 @@ public class LivingUpdateEventHandler {
                                 }
 
                                 //白名单检测
-                                if (!Config.itemWhitelist.isEmpty()) {
+                                if (!EAConfig.itemWhitelist.isEmpty()) {
                                     okay = false;
                                     for (int k = 0; k < EAConfig.itemWhitelist.size(); k++)
                                         if (Objects.equals(ForgeRegistries.ITEMS.getKey(EAConfig.itemWhitelist.get(k)), ForgeRegistries.ITEMS.getKey(stack.getItem())))

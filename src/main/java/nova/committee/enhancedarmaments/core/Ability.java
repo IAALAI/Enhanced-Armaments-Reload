@@ -93,11 +93,9 @@ public enum Ability {
         if (nbt.contains("ABILITIES")){
             childTag = nbt.getCompound("ABILITIES");
             childTag.putInt("count", childTag.getInt("count") + 1);
-            //nbt.putInt("ABILITIES", nbt.getInt("ABILITIES") + 1);
         }
         else {
             childTag.putInt("count", 1);
-            //nbt.putInt("ABILITIES", 1);
         }
         childTag.putInt(toString(), 1);
         nbt.put("ABILITIES", childTag);

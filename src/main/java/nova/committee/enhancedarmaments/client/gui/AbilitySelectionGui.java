@@ -177,7 +177,7 @@ public class AbilitySelectionGui extends Screen {
         graphics.drawCenteredString(font, ChatFormatting.BOLD + I18n.get("enhancedarmaments.ability.type.active"), width / 2 + 75, 120, 0xFFFFFF);
         graphics.drawCenteredString(font, ChatFormatting.BOLD + I18n.get("enhancedarmaments.ability.type.passive"), width / 2 + 150, 120, 0xFFFFFF);
 
-        if (Experience.getLevel(nbt) == Config.maxLevel) {
+        if (Experience.getLevel(nbt) == EAConfig.maxLevel) {
             graphics.drawString(font, I18n.get("enhancedarmaments.misc.level") + ": " + Experience.getLevel(nbt) + ChatFormatting.DARK_RED + " (" + I18n.get("enhancedarmaments.misc.max") + ")", width / 2 - 50, 50, 0xFFFFFF);
             graphics.drawString(font, I18n.get("enhancedarmaments.misc.experience") + ": " + Experience.getExperience(nbt), width / 2 - 50, 60, 0xFFFFFF);
         } else {

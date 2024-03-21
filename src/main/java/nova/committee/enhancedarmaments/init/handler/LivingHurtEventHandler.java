@@ -125,10 +125,10 @@ public class LivingHurtEventHandler {
                 double damage = damageModifier.getAmount();
                 event.setAmount((float) (event.getAmount() + damage * rarity.getEffect()));
             } else if (EAUtil.canEnhanceRanged(stack.getItem())) {
-                float newdamage = (float) (event.getAmount() + (event.getAmount() * rarity.getEffect() / 3));
-                event.setAmount(newdamage);
+                float new_damage = (float) (event.getAmount() + (event.getAmount() * rarity.getEffect() / 3));
+                event.setAmount(new_damage);
             } else if (EAUtil.canEnhanceArmor(stack.getItem()))
-                event.setAmount((float) (event.getAmount() / (1.0F + (rarity.getEffect() / 5F))));
+                event.setAmount(event.getAmount() * (1.0F + (rarity.getEffect() / Rarity.RARITIES.size() ==0 ? 1 : Rarity.RARITIES.size())));
     }
 
     /**

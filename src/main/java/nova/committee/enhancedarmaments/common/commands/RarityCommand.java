@@ -26,19 +26,17 @@ public class RarityCommand {
         );
     }
   
-    public static int changeRarity(CommandSourceStack src, Player player, int rarityid) {
-        if ((rarityid < 1) || (rarityid > 6))
-            src.sendSuccess((Supplier<Component>) Component.literal("Rarity ID must be 1, 2, 3, 4, 5 or 6!"), true);
-        else {
+    public static int changeRarity(CommandSourceStack src, Player player, String rarityid) {
+
             if (!EAUtil.canEnhance(player.getMainHandItem().getItem()))
-                src.sendSuccess((Supplier<Component>) Component.literal("Hold a weapon or an armor in your mainhand!"), true);
+                src.sendSuccess(() -> Component.literal("Hold a weapon or an armor in your mainhand!"), true);
             else {
                 ItemStack item = player.getMainHandItem();
                 CompoundTag nbt = NBTUtil.loadStackNBT(item);
-                Rarity.setRarity(nbt, rarityName);
+                Rarity.setRarity(nbt, rarityid);
                 NBTUtil.saveStackNBT(item, nbt);
                 player.setItemInHand(InteractionHand.MAIN_HAND, item);
-                src.sendSuccess((Supplier<Component>) Component.translatable("enhancedarmaments.command.success"), true);
+                src.sendSuccess(() ->  Component.translatable("enhancedarmaments.command.success"), true);
             }
 
         return 0;
