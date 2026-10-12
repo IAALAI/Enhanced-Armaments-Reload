@@ -1,16 +1,17 @@
 package nova.committee.enhancedarmaments;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import net.minecraft.resources.Identifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Description:
- * Author: cnlimiter
- * Date: 2022/9/3 13:21
- * Version: 1.0
- */
-public class Static {
+public final class Static {
     public static final String MODID = "enhancedarmaments";
-    public static final Logger LOGGER = LogManager.getLogger(MODID);
+    public static final Logger LOGGER = LoggerFactory.getLogger(MODID);
 
+    private Static() {
+    }
+
+    public static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(MODID, path);
+    }
 }

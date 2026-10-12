@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "nova.committee.enhancedarmaments.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "LivingEntityHurtMixin",
+    "BowItemMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

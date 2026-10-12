@@ -1,155 +1,94 @@
 package nova.committee.enhancedarmaments.init.handler;
 
-import com.google.common.base.Stopwatch;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.minecraft.util.GsonHelper;
-import net.minecraftforge.fml.loading.FMLPaths;
+import net.fabricmc.loader.api.FabricLoader;
 import nova.committee.enhancedarmaments.Static;
 import nova.committee.enhancedarmaments.core.Rarity;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.filefilter.FileFilterUtils;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.TimeUnit;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-/**
- * Description:
- * Author: cnlimiter
- * Date: 2022/9/3 15:51
- * Version: 1.0
- */
-public class RarityHandler {
-    private static final RarityHandler INSTANCE = new RarityHandler();
+public final class RarityHandler {
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Path DIR = FabricLoader.getInstance().getConfigDir().resolve("enhancedarmaments/rarity");
 
-    public static RarityHandler getInstance() {
-        return INSTANCE;
+    private RarityHandler() {
     }
 
-    private static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().create();
-
-    private static final File dir = FMLPaths.CONFIGDIR.get().resolve("enhancedarmaments/rarity/").toFile();
-
-    public void loadRarities() {
-        var stopwatch = Stopwatch.createStarted();
-
-        this.writeDefaultRarityFiles();
-
-        clear();
-
-        if (!dir.mkdirs() && dir.isDirectory()) {
-            this.loadFiles();
-        }
-
-        stopwatch.stop();
-
-        Static.LOGGER.info("Loaded {} custom rarity(s) in {} ms", Rarity.RARITIES.size(), stopwatch.elapsed(TimeUnit.MILLISECONDS));
-    }
-
-    public void writeDefaultRarityFiles() {
-        if (!dir.exists() && dir.mkdirs()) {
-            var BASIC = new JsonObject();
-            BASIC.addProperty("name", "basic");
-            BASIC.addProperty("color", "white");
-            BASIC.addProperty("hex", 0xFFFFFF);
-            BASIC.addProperty("weight", 0.5D);
-            BASIC.addProperty("effect", 0D);
-            BASIC.addProperty("enabled", true);
-            var UNCOMMON = new JsonObject();
-            UNCOMMON.addProperty("name", "uncommon");
-            UNCOMMON.addProperty("color", "dark_green");
-            UNCOMMON.addProperty("hex", 0x00AA00);
-            UNCOMMON.addProperty("weight", 0.18D);
-            UNCOMMON.addProperty("effect", 0.155D);
-            UNCOMMON.addProperty("enabled", true);
-            var RARE = new JsonObject();
-            RARE.addProperty("name", "rare");
-            RARE.addProperty("color", "aqua");
-            RARE.addProperty("hex", 0x55FFFF);
-            RARE.addProperty("weight", 0.1D);
-            RARE.addProperty("effect", 0.305D);
-            RARE.addProperty("enabled", true);
-            var ULTRA_RARE = new JsonObject();
-            ULTRA_RARE.addProperty("name", "ultra_rare");
-            ULTRA_RARE.addProperty("color", "dark_purple");
-            ULTRA_RARE.addProperty("hex", 0xAA00AA);
-            ULTRA_RARE.addProperty("weight", 0.05D);
-            ULTRA_RARE.addProperty("effect", 0.38D);
-            ULTRA_RARE.addProperty("enabled", true);
-            var LEGENDARY = new JsonObject();
-            LEGENDARY.addProperty("name", "legendary");
-            LEGENDARY.addProperty("color", "gold");
-            LEGENDARY.addProperty("hex", 0xFFAA00);
-            LEGENDARY.addProperty("weight", 0.02D);
-            LEGENDARY.addProperty("effect", 0.57D);
-            LEGENDARY.addProperty("enabled", true);
-            var ARCHAIC = new JsonObject();
-            ARCHAIC.addProperty("name", "archaic");
-            ARCHAIC.addProperty("color", "red");
-            ARCHAIC.addProperty("hex", 0xFF55FF);
-            ARCHAIC.addProperty("weight", 0.01D);
-            ARCHAIC.addProperty("effect", 0.81D);
-            ARCHAIC.addProperty("enabled", true);
-
-            JsonObject[] list = new JsonObject[]{BASIC, UNCOMMON, RARE, ULTRA_RARE, LEGENDARY, ARCHAIC };
-
-            FileWriter writer = null;
-
-            for (JsonObject json : list){
-                try {
-                    var file = new File(dir, GsonHelper.getAsString(json, "name") + ".json");
-                    writer = new FileWriter(file);
-
-                    GSON.toJson(json, writer);
-                    writer.close();
-                } catch (Exception e) {
-                    Static.LOGGER.error("An error occurred while generating default custom rarity", e);
-                } finally {
-                    IOUtils.closeQuietly(writer);
-                }
+    public static void loadRarities() {
+        try {
+            writeDefaultRarityFiles();
+            Rarity.clear();
+            loadFiles();
+            Static.LOGGER.info("Loaded {} custom rarity(s)", Rarity.RARITIES.size());
+            if (!Rarity.RARITIES.isEmpty() && !Rarity.hasRandomRarities()) {
+                Static.LOGGER.warn("No enabled rarity has a positive finite weight; new items will keep the default rarity");
             }
-
-
+        } catch (IOException e) {
+            Static.LOGGER.error("Failed to load rarities", e);
         }
     }
 
-    private void loadFiles() {
-        var files = dir.listFiles((FileFilter) FileFilterUtils.suffixFileFilter(".json"));
-        if (files == null)
+    private static void writeDefaultRarityFiles() throws IOException {
+        Files.createDirectories(DIR);
+        if (hasJson()) {
             return;
+        }
+        write("basic", "white", 0xFFFFFF, 0.5D, 0D, true);
+        write("uncommon", "dark_green", 0x00AA00, 0.18D, 0.155D, true);
+        write("rare", "aqua", 0x55FFFF, 0.1D, 0.305D, true);
+        write("ultra_rare", "dark_purple", 0xAA00AA, 0.05D, 0.38D, true);
+        write("legendary", "gold", 0xFFAA00, 0.02D, 0.57D, true);
+        write("archaic", "red", 0xFF55FF, 0.01D, 0.81D, true);
+    }
 
-        for (var file : files) {
-            JsonObject json;
-            InputStreamReader reader = null;
-            Rarity rarity = null;
+    private static boolean hasJson() throws IOException {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(DIR, "*.json")) {
+            return stream.iterator().hasNext();
+        }
+    }
 
-            try {
-                reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8);
-                json = JsonParser.parseReader(reader).getAsJsonObject();
+    private static void write(String name, String color, int hex, double weight, double effect, boolean enabled) throws IOException {
+        JsonObject json = new JsonObject();
+        json.addProperty("name", name);
+        json.addProperty("color", color);
+        json.addProperty("hex", hex);
+        json.addProperty("weight", weight);
+        json.addProperty("effect", effect);
+        json.addProperty("enabled", enabled);
+        Path file = DIR.resolve(name + ".json");
+        try (Writer writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
+            GSON.toJson(json, writer);
+        }
+    }
 
-                rarity = Rarity.loadFromJson(json);
-
-                reader.close();
-            } catch (Exception e) {
-                Static.LOGGER.error("An error occurred while loading rarity", e);
-            } finally {
-                IOUtils.closeQuietly(reader);
-            }
-
-            if (rarity != null && rarity.isEnabled()) {
-                if (rarity.getWeight() > 0.0D) {
-                    Rarity.RANDOM_RARITIES.add(rarity.getWeight(), rarity);
+    private static void loadFiles() throws IOException {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(DIR, "*.json")) {
+            for (Path file : stream) {
+                try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+                    JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+                    Rarity rarity = Rarity.loadFromJson(json);
+                    if (rarity.isEnabled()) {
+                        if (Double.isFinite(rarity.getWeight()) && rarity.getWeight() > 0.0D) {
+                            Rarity.RANDOM_RARITIES.add(rarity.getWeight(), rarity);
+                        } else {
+                            Static.LOGGER.warn("Rarity {} has a non-positive or non-finite weight and will not be selected randomly",
+                                    rarity.getName());
+                        }
+                        Rarity.RARITIES.add(rarity);
+                    }
+                } catch (Exception e) {
+                    Static.LOGGER.error("Failed to load rarity {}", file.getFileName(), e);
                 }
-                Rarity.RARITIES.add(rarity);
             }
         }
-
     }
-    public void clear(){
-        Rarity.RARITIES.clear();
-    }
-
 }

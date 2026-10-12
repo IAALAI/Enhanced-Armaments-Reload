@@ -5,12 +5,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.Arrow;
+import net.minecraft.world.entity.projectile.arrow.Arrow;
+import net.minecraft.world.damagesource.DamageSource;
+import net.fabricmc.fabric.api.entity.FakePlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 import nova.committee.enhancedarmaments.common.config.EAConfig;
 import nova.committee.enhancedarmaments.core.Ability;
 import nova.committee.enhancedarmaments.core.Experience;
@@ -20,34 +18,32 @@ import nova.committee.enhancedarmaments.util.NBTUtil;
 /**
  * 使用有效武器杀死目标时更新武器信息。用于更新经验、等级、能力等
  */
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class LivingDeathEventHandler {
-    @SubscribeEvent
-    public static void onLivingDeath(LivingDeathEvent event) {
+public class LivingDeathHandler {
+    public static void onDeath(LivingEntity target, DamageSource source) {
+        onLivingDeath(new DeathContext(target, source));
+    }
+
+    private static void onLivingDeath(DeathContext event) {
         if (event.getSource().getDirectEntity() instanceof Player player && !(event.getSource().getDirectEntity() instanceof FakePlayer)) {
 
-            ItemStack stack;
-            if (LivingHurtEventHandler.bowfriendlyhand == null)
-                stack = player.getItemInHand(player.getUsedItemHand());
-            else
-                stack = player.getItemInHand(LivingHurtEventHandler.bowfriendlyhand);
+            ItemStack stack = LivingHurtHandler.attackerStack(player);
 
-            if (stack != ItemStack.EMPTY && EAUtil.canEnhanceMelee(stack.getItem())) {
+            if (stack != ItemStack.EMPTY && EAUtil.canEnhanceMelee(stack)) {
                 CompoundTag nbt = NBTUtil.loadStackNBT(stack);
                 if (nbt.contains("EA_ENABLED")) {
                     if (Ability.ETHEREAL.hasAbility(nbt)) {
-                        player.getInventory().getSelected().setDamageValue((player.getInventory().getSelected().getDamageValue() - (Ability.ETHEREAL.getLevel(nbt) * 2)));
+                        player.getInventory().getSelectedItem().setDamageValue((player.getInventory().getSelectedItem().getDamageValue() - (Ability.ETHEREAL.getLevel(nbt) * 2)));
                     }
                     addBonusExperience(event, player, stack, nbt);
                     updateLevel(player, stack, nbt);
                     NBTUtil.saveStackNBT(stack, nbt);
                 }
-            } else if (stack != ItemStack.EMPTY && EAUtil.canEnhanceRanged(stack.getItem())) {
+            } else if (stack != ItemStack.EMPTY && EAUtil.canEnhanceRanged(stack)) {
                 CompoundTag nbt = NBTUtil.loadStackNBT(stack);
 
                 if (nbt.contains("EA_ENABLED")) {
                     if (Ability.ETHEREAL.hasAbility(nbt)) {
-                        player.getInventory().getSelected().setDamageValue((player.getInventory().getSelected().getDamageValue() - (Ability.ETHEREAL.getLevel(nbt) * 2 + 1)));
+                        player.getInventory().getSelectedItem().setDamageValue((player.getInventory().getSelectedItem().getDamageValue() - (Ability.ETHEREAL.getLevel(nbt) * 2 + 1)));
                     }
                     addBonusExperience(event, player, stack, nbt);
                     updateLevel(player, stack, nbt);
@@ -56,7 +52,7 @@ public class LivingDeathEventHandler {
         } else if (event.getSource().getDirectEntity() instanceof Arrow) {
 
             if (event.getSource().getEntity() instanceof Player player && event.getSource().getEntity() != null) {
-                ItemStack stack = player.getInventory().getSelected();
+                ItemStack stack = player.getInventory().getSelectedItem();
 
                 if (stack != ItemStack.EMPTY) {
                     CompoundTag nbt = NBTUtil.loadStackNBT(stack);
@@ -74,8 +70,8 @@ public class LivingDeathEventHandler {
      * @param event
      * @param nbt
      */
-    private static void addBonusExperience(LivingDeathEvent event, Player player, ItemStack stack, CompoundTag nbt) {
-        if (Experience.getLevel(nbt) < EAConfig.maxLevel) {
+    private static void addBonusExperience(DeathContext event, Player player, ItemStack stack, CompoundTag nbt) {
+        if (Experience.getLevel(nbt) < EAConfig.DATA.maxLevel) {
             if (event.getEntity() != null) {
                 LivingEntity target = event.getEntity();
                 int bonusExperience = 0;
@@ -101,8 +97,14 @@ public class LivingDeathEventHandler {
      * @param stack
      * @param nbt
      */
+    private record DeathContext(LivingEntity entity, DamageSource source) {
+        LivingEntity getEntity() { return entity; }
+        DamageSource getSource() { return source; }
+    }
+
     private static void updateLevel(Player player, ItemStack stack, CompoundTag nbt) {
         int level = Experience.getNextLevel(player, stack, nbt, Experience.getLevel(nbt), Experience.getExperience(nbt));
         Experience.setLevel(nbt, level);
+        NBTUtil.saveStackNBT(stack, nbt);
     }
 }

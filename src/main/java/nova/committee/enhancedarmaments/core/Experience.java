@@ -11,7 +11,7 @@ public class Experience {
     public static int getNextLevel(Player player, ItemStack stack, CompoundTag nbt, int currentLevel, int experience) {
         int newLevel = currentLevel;
 
-        while (currentLevel < EAConfig.CONFIG.maxLevel.get() && experience >= Experience.getMaxLevelExp(currentLevel)) {
+        while (currentLevel < EAConfig.DATA.maxLevel && experience >= Experience.getMaxLevelExp(currentLevel)) {
             newLevel = currentLevel + 1;
             currentLevel++;
             Experience.setAbilityTokens(nbt, Experience.getAbilityTokens(nbt) + 1);
@@ -22,11 +22,11 @@ public class Experience {
     }
 
     public static int getLevel(CompoundTag nbt) {
-        return nbt != null ? Math.max(nbt.getInt("LEVEL"), 1) : 1;
+        return nbt != null ? Math.max(nbt.getIntOr("LEVEL", 0), 1) : 1;
     }
 
     public static boolean canLevelUp(CompoundTag nbt) {
-        return getLevel(nbt) < EAConfig.CONFIG.maxLevel.get();
+        return getLevel(nbt) < EAConfig.DATA.maxLevel;
     }
 
     public static void setLevel(CompoundTag nbt, int level) {
@@ -43,7 +43,7 @@ public class Experience {
     }
 
     public static int getExperience(CompoundTag nbt) {
-        return nbt.contains("EXPERIENCE") ? nbt.getInt("EXPERIENCE") : 0;
+        return nbt.contains("EXPERIENCE") ? nbt.getIntOr("EXPERIENCE", 0) : 0;
     }
 
     public static void setExperience(CompoundTag nbt, int experience) {
@@ -56,9 +56,9 @@ public class Experience {
     }
 
     public static int getMaxLevelExp(int level) {
-        int maxLevelExp = EAConfig.CONFIG.level1Experience.get();
+        int maxLevelExp = EAConfig.DATA.level1Experience;
         for (int i = 1; i < level; i++)
-            maxLevelExp *= EAConfig.CONFIG.experienceMultiplier.get();
+            maxLevelExp *= EAConfig.DATA.experienceMultiplier;
         return maxLevelExp;
     }
 
@@ -72,7 +72,7 @@ public class Experience {
     }
 
     public static int getAbilityTokens(CompoundTag nbt) {
-        return nbt != null ? nbt.getInt("TOKENS") : 0;
+        return nbt != null ? nbt.getIntOr("TOKENS", 0) : 0;
     }
 
     public static void enable(CompoundTag nbt, boolean value) {
@@ -85,6 +85,6 @@ public class Experience {
     }
 
     public static boolean isEnabled(CompoundTag nbt) {
-        return nbt != null && nbt.getBoolean("EA_ENABLED");
+        return nbt != null && nbt.getBooleanOr("EA_ENABLED", false);
     }
 }

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "enhancedarmaments",
+  "version": "${version}",
+  "name": "Enhanced Armaments Reload",
+  "description": "Weapon and armor leveling, rarities, and abilities. Compatibility port of the Forge 1.20.1 gameplay to Fabric for Minecraft 26.3.",
+  "authors": [
+    "cnlimiter",
+    "iaalai"
+  ],
+  "contact": {
+    "sources": "https://github.com/IAALAI/Enhanced-Armaments-Reload/tree/26.3",
+    "homepage": "https://github.com/Nova-Committee/Enhanced-Armaments-Reload"
+  },
+  "license": "AGPL-3.0",
+  "icon": "assets/enhancedarmaments/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "nova.committee.enhancedarmaments.EnhancedArmaments"
+    ],
+    "client": [
+      "nova.committee.enhancedarmaments.client.EnhancedArmamentsClient"
+    ]
+  },
+  "mixins": [
+    "enhancedarmaments.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

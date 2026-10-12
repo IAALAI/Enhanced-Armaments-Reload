@@ -1,7 +1,6 @@
 package nova.committee.enhancedarmaments.common.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -14,33 +13,28 @@ import nova.committee.enhancedarmaments.core.Rarity;
 import nova.committee.enhancedarmaments.util.EAUtil;
 import nova.committee.enhancedarmaments.util.NBTUtil;
 
-import java.util.function.Supplier;
-
-public class RarityCommand {
+public final class RarityCommand {
+    private RarityCommand() {
+    }
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("changerarity")
-                .requires(cmd -> cmd.hasPermission(2))
+                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .then(Commands.argument("rarityName", StringArgumentType.greedyString())
-                        .executes(cmd -> changeRarity(cmd.getSource(), cmd.getSource().getPlayerOrException(), cmd.getArgument("rarityName", String.class))))
-        );
+                        .executes(cmd -> changeRarity(cmd.getSource(), cmd.getSource().getPlayerOrException(), cmd.getArgument("rarityName", String.class)))));
     }
-  
-    public static int changeRarity(CommandSourceStack src, Player player, int rarityid) {
-        if ((rarityid < 1) || (rarityid > 6))
-            src.sendSuccess((Supplier<Component>) Component.literal("Rarity ID must be 1, 2, 3, 4, 5 or 6!"), true);
-        else {
-            if (!EAUtil.canEnhance(player.getMainHandItem().getItem()))
-                src.sendSuccess((Supplier<Component>) Component.literal("Hold a weapon or an armor in your mainhand!"), true);
-            else {
-                ItemStack item = player.getMainHandItem();
-                CompoundTag nbt = NBTUtil.loadStackNBT(item);
-                Rarity.setRarity(nbt, rarityName);
-                NBTUtil.saveStackNBT(item, nbt);
-                player.setItemInHand(InteractionHand.MAIN_HAND, item);
-                src.sendSuccess((Supplier<Component>) Component.translatable("enhancedarmaments.command.success"), true);
-            }
 
+    private static int changeRarity(CommandSourceStack src, Player player, String rarityName) {
+        ItemStack item = player.getMainHandItem();
+        if (!EAUtil.canEnhance(item)) {
+            src.sendSuccess(() -> Component.literal("Hold a weapon or an armor in your mainhand!"), true);
+            return 0;
+        }
+        CompoundTag nbt = NBTUtil.loadStackNBT(item);
+        Rarity.setRarity(nbt, rarityName);
+        NBTUtil.saveStackNBT(item, nbt);
+        player.setItemInHand(InteractionHand.MAIN_HAND, item);
+        src.sendSuccess(() -> Component.translatable("enhancedarmaments.command.success"), true);
         return 0;
     }
 }

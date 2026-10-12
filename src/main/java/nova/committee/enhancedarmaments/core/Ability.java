@@ -7,33 +7,34 @@ import net.minecraft.world.entity.player.Player;
 import nova.committee.enhancedarmaments.common.config.EAConfig;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 public enum Ability {
     // weapon
     // active
-    FIRE("weapon", "active", EAConfig.fireAbility, ChatFormatting.RED, 0xFF5555, 1, 3),
-    FROST("weapon", "active", EAConfig.frostAbility, ChatFormatting.AQUA, 0x55FFFF, 1, 3),
-    POISON("weapon", "active", EAConfig.poisonAbility, ChatFormatting.DARK_GREEN, 0x00AA00, 1, 3),
-    INNATE("weapon", "active", EAConfig.innateAbility, ChatFormatting.DARK_RED, 0xAA0000, 2, 3),
-    BOMBASTIC("weapon", "active", EAConfig.bombasticAbility, ChatFormatting.GRAY, 0xAAAAAA, 3, 3),
-    CRITICAL_POINT("weapon", "active", EAConfig.criticalpointAbility, ChatFormatting.DARK_GRAY, 0x555555, 3, 3),
+    FIRE("weapon", "active", () -> EAConfig.DATA.fireAbility, ChatFormatting.RED, 0xFF5555, 1, 3),
+    FROST("weapon", "active", () -> EAConfig.DATA.frostAbility, ChatFormatting.AQUA, 0x55FFFF, 1, 3),
+    POISON("weapon", "active", () -> EAConfig.DATA.poisonAbility, ChatFormatting.DARK_GREEN, 0x00AA00, 1, 3),
+    INNATE("weapon", "active", () -> EAConfig.DATA.innateAbility, ChatFormatting.DARK_RED, 0xAA0000, 2, 3),
+    BOMBASTIC("weapon", "active", () -> EAConfig.DATA.bombasticAbility, ChatFormatting.GRAY, 0xAAAAAA, 3, 3),
+    CRITICAL_POINT("weapon", "active", () -> EAConfig.DATA.criticalpointAbility, ChatFormatting.DARK_GRAY, 0x555555, 3, 3),
     // passive
-    ILLUMINATION("weapon", "passive", EAConfig.illuminationAbility, ChatFormatting.YELLOW, 0xFFFF55, 2, 1),
-    ETHEREAL("weapon", "passive", EAConfig.etherealAbility, ChatFormatting.GREEN, 0x55FF55, 2, 2),
-    BLOODTHIRST("weapon", "passive", EAConfig.bloodthirstAbility, ChatFormatting.DARK_PURPLE, 0xAA00AA, 3, 2),
+    ILLUMINATION("weapon", "passive", () -> EAConfig.DATA.illuminationAbility, ChatFormatting.YELLOW, 0xFFFF55, 2, 1),
+    ETHEREAL("weapon", "passive", () -> EAConfig.DATA.etherealAbility, ChatFormatting.GREEN, 0x55FF55, 2, 2),
+    BLOODTHIRST("weapon", "passive", () -> EAConfig.DATA.bloodthirstAbility, ChatFormatting.DARK_PURPLE, 0xAA00AA, 3, 2),
 
     // armor
     // active
-    MOLTEN("armor", "active", EAConfig.moltenAbility, ChatFormatting.RED, 0xFF5555, 2, 2),
-    FROZEN("armor", "active", EAConfig.frozenAbility, ChatFormatting.AQUA, 0x55FFFF, 2, 2),
-    TOXIC("armor", "active", EAConfig.toxicAbility, ChatFormatting.DARK_GREEN, 0x00AA00, 2, 2),
+    MOLTEN("armor", "active", () -> EAConfig.DATA.moltenAbility, ChatFormatting.RED, 0xFF5555, 2, 2),
+    FROZEN("armor", "active", () -> EAConfig.DATA.frozenAbility, ChatFormatting.AQUA, 0x55FFFF, 2, 2),
+    TOXIC("armor", "active", () -> EAConfig.DATA.toxicAbility, ChatFormatting.DARK_GREEN, 0x00AA00, 2, 2),
     // passive
-    BEASTIAL("armor", "passive", EAConfig.beastialAbility, ChatFormatting.DARK_RED, 0xAA0000, 2, 1),
-    REMEDIAL("armor", "passive", EAConfig.remedialAbility, ChatFormatting.LIGHT_PURPLE, 0xFF55FF, 2, 2),
-    HARDENED("armor", "passive", EAConfig.hardenedAbility, ChatFormatting.GRAY, 0xAAAAAA, 3, 1),
-    ADRENALINE("armor", "passive", EAConfig.adrenalineAbility, ChatFormatting.GREEN, 0x55FF55, 3, 1),
-    FROSTWALKER("armor", "passive", EAConfig.frostwalkerAbility, ChatFormatting.DARK_BLUE, 0x55FF55, 3, 2),
-    GALLOP("armor", "passive", true, ChatFormatting.BLUE, 0xFF5555, 3, 2);
+    BEASTIAL("armor", "passive", () -> EAConfig.DATA.beastialAbility, ChatFormatting.DARK_RED, 0xAA0000, 2, 1),
+    REMEDIAL("armor", "passive", () -> EAConfig.DATA.remedialAbility, ChatFormatting.LIGHT_PURPLE, 0xFF55FF, 2, 2),
+    HARDENED("armor", "passive", () -> EAConfig.DATA.hardenedAbility, ChatFormatting.GRAY, 0xAAAAAA, 3, 1),
+    ADRENALINE("armor", "passive", () -> EAConfig.DATA.adrenalineAbility, ChatFormatting.GREEN, 0x55FF55, 3, 1),
+    FROSTWALKER("armor", "passive", () -> EAConfig.DATA.frostwalkerAbility, ChatFormatting.DARK_BLUE, 0x55FF55, 3, 2),
+    GALLOP("armor", "passive", () -> true, ChatFormatting.BLUE, 0xFF5555, 3, 2);
 
 
     public static final ArrayList<Ability> WEAPON_ABILITIES = new ArrayList<Ability>();
@@ -42,13 +43,17 @@ public enum Ability {
     public static int WEAPON_ABILITIES_COUNT = 0;
     public static int ARMOR_ABILITIES_COUNT = 0;
 
-    static {
+    static { refreshLists(); }
+
+    public static void refreshLists() {
+        WEAPON_ABILITIES.clear(); ARMOR_ABILITIES.clear(); ALL_ABILITIES.clear();
+        WEAPON_ABILITIES_COUNT = 0; ARMOR_ABILITIES_COUNT = 0;
         for (int i = 0; i < Ability.values().length; i++) {
             Ability.ALL_ABILITIES.add(Ability.values()[i]);
-            if (Ability.values()[i].getCategory().equals("weapon") && Ability.values()[i].enabled) {
+            if (Ability.values()[i].getCategory().equals("weapon") && Ability.values()[i].isEnabled()) {
                 Ability.WEAPON_ABILITIES.add(Ability.values()[i]);
                 Ability.WEAPON_ABILITIES_COUNT++;
-            } else if (Ability.values()[i].getCategory().equals("armor") && Ability.values()[i].enabled) {
+            } else if (Ability.values()[i].getCategory().equals("armor") && Ability.values()[i].isEnabled()) {
                 Ability.ARMOR_ABILITIES.add(Ability.values()[i]);
                 Ability.ARMOR_ABILITIES_COUNT++;
             }
@@ -57,13 +62,13 @@ public enum Ability {
 
     private final String category;
     private final String type;
-    private final boolean enabled;
+    private final java.util.function.BooleanSupplier enabled;
     private final String color;
     private final int hex;
     private final int tier;
     private final int maxlevel;
 
-    Ability(String category, String type, boolean enabled, Object color, int hex, int tier, int maxlevel) {
+    Ability(String category, String type, java.util.function.BooleanSupplier enabled, Object color, int hex, int tier, int maxlevel) {
         this.category = category;
         this.type = type;
         this.enabled = enabled;
@@ -80,7 +85,7 @@ public enum Ability {
      * @return
      */
     public boolean hasAbility(CompoundTag nbt) {
-        return nbt != null && nbt.contains("ABILITIES") && nbt.getCompound("ABILITIES").getInt(toString()) > 0;
+        return nbt != null && nbt.contains("ABILITIES") && nbt.getCompoundOrEmpty("ABILITIES").getIntOr(toString(), 0) > 0;
     }
 
     /**
@@ -91,9 +96,9 @@ public enum Ability {
     public void addAbility(CompoundTag nbt) {
         var childTag = new CompoundTag();
         if (nbt.contains("ABILITIES")){
-            childTag = nbt.getCompound("ABILITIES");
-            childTag.putInt("count", childTag.getInt("count") + 1);
-            //nbt.putInt("ABILITIES", nbt.getInt("ABILITIES") + 1);
+            childTag = nbt.getCompoundOrEmpty("ABILITIES");
+            childTag.putInt("count", childTag.getIntOr("count", 0) + 1);
+            //nbt.putInt("ABILITIES", nbt.getIntOr("ABILITIES", 0) + 1);
         }
         else {
             childTag.putInt("count", 1);
@@ -112,9 +117,9 @@ public enum Ability {
     public void removeAbility(CompoundTag nbt) {
         var childTag = new CompoundTag();
         if (nbt.contains("ABILITIES")){
-            childTag = nbt.getCompound("ABILITIES");
-            if (childTag.getInt("count") > 0){
-                childTag.putInt("count", childTag.getInt("count") - 1);
+            childTag = nbt.getCompoundOrEmpty("ABILITIES");
+            if (childTag.getIntOr("count", 0) > 0){
+                childTag.putInt("count", childTag.getIntOr("count", 0) - 1);
             }
             childTag.remove(toString());
             nbt.put("ABILITIES", childTag);
@@ -145,8 +150,8 @@ public enum Ability {
         int requiredExpLevel = 0;
         var childTag = new CompoundTag();
         if (nbt.contains("ABILITIES")){
-            childTag = nbt.getCompound("ABILITIES");
-            requiredExpLevel = (getTier() + getMaxLevel()) * (childTag.getInt("count") + 1) - 1;
+            childTag = nbt.getCompoundOrEmpty("ABILITIES");
+            requiredExpLevel = (getTier() + getMaxLevel()) * (childTag.getIntOr("count", 0) + 1) - 1;
         }
         else
             requiredExpLevel = getTier() + getMaxLevel();
@@ -160,8 +165,9 @@ public enum Ability {
      * @param level level
      */
     public void setLevel(CompoundTag nbt, int level) {
-        var childTag = nbt.getCompound("ABILITIES");
+        var childTag = nbt.getCompoundOrEmpty("ABILITIES");
         childTag.putInt(toString(), level);
+        nbt.put("ABILITIES", childTag);
 
     }
 
@@ -174,8 +180,8 @@ public enum Ability {
     public int getLevel(CompoundTag nbt) {
         var childTag = new CompoundTag();
         if (nbt != null){
-            childTag = nbt.getCompound("ABILITIES");
-            return childTag.getInt(toString());
+            childTag = nbt.getCompoundOrEmpty("ABILITIES");
+            return childTag.getIntOr(toString(), 0);
         }
         else
             return 0;
@@ -183,6 +189,13 @@ public enum Ability {
 
     public boolean canUpgradeLevel(CompoundTag nbt) {
         return getLevel(nbt) < this.maxlevel;
+    }
+
+    public boolean isEnabled() { return enabled.getAsBoolean(); }
+
+    public static Optional<Ability> byId(String id) {
+        for (Ability ability : values()) if (ability.name().equals(id)) return Optional.of(ability);
+        return Optional.empty();
     }
 
     public int getTier() {

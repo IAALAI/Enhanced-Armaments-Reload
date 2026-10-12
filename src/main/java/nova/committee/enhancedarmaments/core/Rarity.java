@@ -26,7 +26,11 @@ public class Rarity {
 
     Rarity(String name, String color, int hex, double weight, double effect) {
         this.name = name;
-        this.color = ChatFormatting.getByName(color);
+        ChatFormatting parsed = null;
+        for (ChatFormatting candidate : ChatFormatting.values()) {
+            if (candidate.name().equalsIgnoreCase(color)) { parsed = candidate; break; }
+        }
+        this.color = parsed == null ? ChatFormatting.WHITE : parsed;
         this.hex = hex;
         this.weight = weight;
         this.effect = effect;
@@ -38,18 +42,22 @@ public class Rarity {
      * @param random
      * @return
      */
+    public static void clear() { RARITIES.clear(); RANDOM_RARITIES.clear(); }
+
+    public static boolean hasRandomRarities() { return !RANDOM_RARITIES.isEmpty(); }
+
     public static Rarity getRandomRarity(RandomSource random) {
-        return RANDOM_RARITIES.next(random);
+        return RANDOM_RARITIES.next(random).orElse(DEFAULT);
     }
 
     private static Rarity getByName(CompoundTag nbt){
         final Rarity[] rarity1 = new Rarity[1];
         RARITIES.stream()
-                .filter(rarity -> rarity.getName().equalsIgnoreCase(nbt.getString("RARITY")))
+                .filter(rarity -> rarity.getName().equalsIgnoreCase(nbt.getStringOr("RARITY", "")))
                 .findFirst()
                 .ifPresent(
                         rarity -> rarity1[0] = rarity);
-        return rarity1[0];
+        return rarity1[0] == null ? DEFAULT : rarity1[0];
     }
 
     /**

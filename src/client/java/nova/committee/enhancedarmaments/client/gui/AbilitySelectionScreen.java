@@ -1,21 +1,18 @@
 package nova.committee.enhancedarmaments.client.gui;
 
 import net.minecraft.ChatFormatting;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import nova.committee.enhancedarmaments.common.network.GuiAbilityPayload;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.gui.widget.ExtendedButton;
 import nova.committee.enhancedarmaments.common.config.EAConfig;
-import nova.committee.enhancedarmaments.common.network.GuiAbilityPacket;
-import nova.committee.enhancedarmaments.common.network.PacketHandler;
 import nova.committee.enhancedarmaments.core.Ability;
 import nova.committee.enhancedarmaments.core.Experience;
 import nova.committee.enhancedarmaments.core.Rarity;
@@ -28,12 +25,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class AbilitySelectionGui extends Screen {
+public class AbilitySelectionScreen extends Screen {
     private final int leftPos, topPos;
     private Button[] weaponAbilities;
     private Button[] armorAbilities;
 
-    public AbilitySelectionGui() {
+    public AbilitySelectionScreen() {
         super(Component.literal(""));
         this.leftPos = (this.width) / 2;
         this.topPos = (this.height) / 2;
@@ -46,45 +43,41 @@ public class AbilitySelectionGui extends Screen {
         Player player = this.minecraft.player;
 
         if (player != null) {
-            ItemStack stack = player.getInventory().getSelected();
+            ItemStack stack = player.getInventory().getSelectedItem();
 
             if (stack != ItemStack.EMPTY) {
-                if (EAUtil.canEnhanceWeapon(stack.getItem())) {
+                if (EAUtil.canEnhanceWeapon(stack)) {
                     weaponAbilities = new Button[Ability.WEAPON_ABILITIES_COUNT];
-                    CompoundTag nbt = stack.getTag();
+                    CompoundTag nbt = NBTUtil.loadStackNBT(stack);
 
                     if (nbt != null) {
                         int j = 0;
 
                         for (int i = 0; i < weaponAbilities.length; i++) {
                             if (Ability.WEAPON_ABILITIES.get(i).getType().equals("active")) {
-                                weaponAbilities[i] = new ExtendedButton(width / 2 - 215, 100 + (i * 21), 110, 20,
-                                        Component.translatable("enhancedarmaments.ability." + Ability.WEAPON_ABILITIES.get(i).getName()), this::actionPerformed);
+                                weaponAbilities[i] = Button.builder(Component.translatable("enhancedarmaments.ability." + Ability.WEAPON_ABILITIES.get(i).getName()), this::actionPerformed).bounds(width / 2 - 215, 100 + (i * 21), 110, 20).build();
                                 j++;
                             } else
-                                weaponAbilities[i] = new ExtendedButton(width / 2 - 100, 100 + ((i - j) * 21), 110, 20,
-                                        Component.translatable("enhancedarmaments.ability." + Ability.WEAPON_ABILITIES.get(i).getName()), this::actionPerformed);
+                                weaponAbilities[i] = Button.builder(Component.translatable("enhancedarmaments.ability." + Ability.WEAPON_ABILITIES.get(i).getName()), this::actionPerformed).bounds(width / 2 - 100, 100 + ((i - j) * 21), 110, 20).build();
 
                             this.addRenderableWidget(weaponAbilities[i]);
                             weaponAbilities[i].active = false;
                         }
                     }
-                } else if (EAUtil.canEnhanceArmor(stack.getItem())) {
+                } else if (EAUtil.canEnhanceArmor(stack)) {
                     armorAbilities = new Button[Ability.ARMOR_ABILITIES_COUNT];
-                    CompoundTag nbt = stack.getTag();
+                    CompoundTag nbt = NBTUtil.loadStackNBT(stack);
 
                     if (nbt != null) {
                         int j = 0;
 
                         for (int i = 0; i < armorAbilities.length; i++) {
                             if (Ability.ARMOR_ABILITIES.get(i).getType().equals("active")) {
-                                armorAbilities[i] = new ExtendedButton(width / 2 - 215, 100 + (i * 21), 100, 20,
-                                        Component.translatable("enhancedarmaments.ability." + Ability.ARMOR_ABILITIES.get(i).getName()), this::actionPerformed);
+                                armorAbilities[i] = Button.builder(Component.translatable("enhancedarmaments.ability." + Ability.ARMOR_ABILITIES.get(i).getName()), this::actionPerformed).bounds(width / 2 - 215, 100 + (i * 21), 100, 20).build();
 
                                 j++;
                             } else
-                                armorAbilities[i] = new ExtendedButton(width / 2 - 100, 100 + ((i - j) * 21), 105, 20,
-                                        Component.translatable("enhancedarmaments.ability." + Ability.ARMOR_ABILITIES.get(i).getName()), this::actionPerformed);
+                                armorAbilities[i] = Button.builder(Component.translatable("enhancedarmaments.ability." + Ability.ARMOR_ABILITIES.get(i).getName()), this::actionPerformed).bounds(width / 2 - 100, 100 + ((i - j) * 21), 105, 20).build();
 
                             this.addRenderableWidget(armorAbilities[i]);
                             armorAbilities[i].active = false;
@@ -96,26 +89,26 @@ public class AbilitySelectionGui extends Screen {
     }
 
     @Override
-    public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(graphics);
-        super.render(graphics, mouseX, mouseY, partialTicks);
+    public void extractRenderState(@NotNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        this.extractBackground(graphics, mouseX, mouseY, partialTicks);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);
 
         Player player = this.minecraft.player;
 
         if (player != null) {
-            ItemStack stack = player.getInventory().getSelected();
+            ItemStack stack = player.getInventory().getSelectedItem();
 
             if (stack != ItemStack.EMPTY) {
-                if (EAUtil.canEnhance(stack.getItem())) {
+                if (EAUtil.canEnhance(stack)) {
                     CompoundTag nbt = NBTUtil.loadStackNBT(stack);
 
                     {
-                        if (EAUtil.canEnhanceWeapon(stack.getItem())) {
+                        if (EAUtil.canEnhanceWeapon(stack)) {
 
                             drawStrings(graphics, stack, Ability.WEAPON_ABILITIES, nbt);
                             displayButtons(graphics, weaponAbilities, Ability.WEAPON_ABILITIES, nbt, player);
                             drawTooltips(graphics, weaponAbilities, Ability.WEAPON_ABILITIES, mouseX, mouseY);
-                        } else if (EAUtil.canEnhanceArmor(stack.getItem())) {
+                        } else if (EAUtil.canEnhanceArmor(stack)) {
                             drawStrings(graphics, stack, Ability.ARMOR_ABILITIES, nbt);
                             displayButtons(graphics, armorAbilities, Ability.ARMOR_ABILITIES, nbt, player);
                             drawTooltips(graphics, armorAbilities, Ability.ARMOR_ABILITIES, mouseX, mouseY);
@@ -127,28 +120,27 @@ public class AbilitySelectionGui extends Screen {
     }
 
 
-    @OnlyIn(Dist.CLIENT)
     private void actionPerformed(Button button) {
         Player player = minecraft.player;
 
         if (player != null) {
-            ItemStack stack = player.getInventory().getSelected();
+            ItemStack stack = player.getInventory().getSelectedItem();
 
             if (stack != ItemStack.EMPTY) {
                 CompoundTag nbt = NBTUtil.loadStackNBT(stack);
 
                 {
                     if (Experience.getAbilityTokens(nbt) > 0 || player.experienceLevel > 1 || player.isCreative()) {
-                        if (EAUtil.canEnhanceWeapon(stack.getItem())) {
+                        if (EAUtil.canEnhanceWeapon(stack)) {
                             for (int i = 0; i < weaponAbilities.length; i++) {
                                 if (button == weaponAbilities[i]) {
-                                    PacketHandler.INSTANCE.sendToServer(new GuiAbilityPacket(i));
+                                    ClientPlayNetworking.send(new GuiAbilityPayload(Ability.WEAPON_ABILITIES.get(i).name(), player.getInventory().getSelectedSlot()));
                                 }
                             }
-                        } else if (EAUtil.canEnhanceArmor(stack.getItem())) {
+                        } else if (EAUtil.canEnhanceArmor(stack)) {
                             for (int i = 0; i < armorAbilities.length; i++) {
                                 if (button == armorAbilities[i]) {
-                                    PacketHandler.INSTANCE.sendToServer(new GuiAbilityPacket(i));
+                                    ClientPlayNetworking.send(new GuiAbilityPayload(Ability.ARMOR_ABILITIES.get(i).name(), player.getInventory().getSelectedSlot()));
                                 }
                             }
                         }
@@ -165,24 +157,24 @@ public class AbilitySelectionGui extends Screen {
      * @param abilities
      * @param nbt
      */
-    private void drawStrings(GuiGraphics graphics, ItemStack stack, ArrayList<Ability> abilities, CompoundTag nbt) {
+    private void drawStrings(GuiGraphicsExtractor graphics, ItemStack stack, ArrayList<Ability> abilities, CompoundTag nbt) {
         Rarity rarity = Rarity.getRarity(nbt);
 
-        graphics.drawCenteredString(font, stack.getDisplayName(), width / 2, 20, 0xFFFFFF);
-        graphics.drawString(font, I18n.get("enhancedarmaments.misc.rarity") + ": ", width / 2 - 50, 40, 0xFFFFFF);
-        graphics.drawString(font, I18n.get("enhancedarmaments.rarity." + rarity.getName()), width / 2 - 15, 40, rarity.getHex());
-        graphics.drawCenteredString(font, ChatFormatting.ITALIC + I18n.get("enhancedarmaments.misc.abilities"), width / 2 - 100, 73, 0xFFFFFF);
-        graphics.drawCenteredString(font, ChatFormatting.GRAY + I18n.get("enhancedarmaments.misc.abilities.tokens") + ": " + ChatFormatting.DARK_GREEN + Experience.getAbilityTokens(nbt), width / 2 - 100, 86, 0xFFFFFF);
-        graphics.drawCenteredString(font, ChatFormatting.GOLD + I18n.get("enhancedarmaments.misc.abilities.purchased"), width / 2 + 112, 100, 0xFFFFFF);
-        graphics.drawCenteredString(font, ChatFormatting.BOLD + I18n.get("enhancedarmaments.ability.type.active"), width / 2 + 75, 120, 0xFFFFFF);
-        graphics.drawCenteredString(font, ChatFormatting.BOLD + I18n.get("enhancedarmaments.ability.type.passive"), width / 2 + 150, 120, 0xFFFFFF);
+        graphics.centeredText(font, stack.getDisplayName(), width / 2, 20, 0xFFFFFFFF);
+        graphics.text(font, I18n.get("enhancedarmaments.misc.rarity") + ": ", width / 2 - 50, 40, 0xFFFFFFFF);
+        graphics.text(font, I18n.get("enhancedarmaments.rarity." + rarity.getName()), width / 2 - 15, 40, (rarity.getHex() | 0xFF000000));
+        graphics.centeredText(font, ChatFormatting.ITALIC + I18n.get("enhancedarmaments.misc.abilities"), width / 2 - 100, 73, 0xFFFFFFFF);
+        graphics.centeredText(font, ChatFormatting.GRAY + I18n.get("enhancedarmaments.misc.abilities.tokens") + ": " + ChatFormatting.DARK_GREEN + Experience.getAbilityTokens(nbt), width / 2 - 100, 86, 0xFFFFFFFF);
+        graphics.centeredText(font, ChatFormatting.GOLD + I18n.get("enhancedarmaments.misc.abilities.purchased"), width / 2 + 112, 100, 0xFFFFFFFF);
+        graphics.centeredText(font, ChatFormatting.BOLD + I18n.get("enhancedarmaments.ability.type.active"), width / 2 + 75, 120, 0xFFFFFFFF);
+        graphics.centeredText(font, ChatFormatting.BOLD + I18n.get("enhancedarmaments.ability.type.passive"), width / 2 + 150, 120, 0xFFFFFFFF);
 
-        if (Experience.getLevel(nbt) == Config.maxLevel) {
-            graphics.drawString(font, I18n.get("enhancedarmaments.misc.level") + ": " + Experience.getLevel(nbt) + ChatFormatting.DARK_RED + " (" + I18n.get("enhancedarmaments.misc.max") + ")", width / 2 - 50, 50, 0xFFFFFF);
-            graphics.drawString(font, I18n.get("enhancedarmaments.misc.experience") + ": " + Experience.getExperience(nbt), width / 2 - 50, 60, 0xFFFFFF);
+        if (Experience.getLevel(nbt) == EAConfig.DATA.maxLevel) {
+            graphics.text(font, I18n.get("enhancedarmaments.misc.level") + ": " + Experience.getLevel(nbt) + ChatFormatting.DARK_RED + " (" + I18n.get("enhancedarmaments.misc.max") + ")", width / 2 - 50, 50, 0xFFFFFFFF);
+            graphics.text(font, I18n.get("enhancedarmaments.misc.experience") + ": " + Experience.getExperience(nbt), width / 2 - 50, 60, 0xFFFFFFFF);
         } else {
-            graphics.drawString(font, I18n.get("enhancedarmaments.misc.level") + ": " + Experience.getLevel(nbt), width / 2 - 50, 50, 0xFFFFFF);
-            graphics.drawString(font, I18n.get("enhancedarmaments.misc.experience") + ": " + Experience.getExperience(nbt) + " / " + Experience.getMaxLevelExp(Experience.getLevel(nbt)), width / 2 - 50, 60, 0xFFFFFF);
+            graphics.text(font, I18n.get("enhancedarmaments.misc.level") + ": " + Experience.getLevel(nbt), width / 2 - 50, 50, 0xFFFFFFFF);
+            graphics.text(font, I18n.get("enhancedarmaments.misc.experience") + ": " + Experience.getExperience(nbt) + " / " + Experience.getMaxLevelExp(Experience.getLevel(nbt)), width / 2 - 50, 60, 0xFFFFFFFF);
         }
 
         int j = -1;
@@ -192,10 +184,10 @@ public class AbilitySelectionGui extends Screen {
             if (ability.hasAbility(nbt)) {
                 if (ability.getType().equals("active")) {
                     j++;
-                    graphics.drawCenteredString(font, I18n.get(ability.getName(nbt)), width / 2 + 75, 135 + (j * 12), ability.getHex());
+                    graphics.centeredText(font, I18n.get(ability.getName(nbt)), width / 2 + 75, 135 + (j * 12), (ability.getHex() | 0xFF000000));
                 } else if (ability.getType().equals("passive")) {
                     k++;
-                    graphics.drawCenteredString(font, ability.getName(nbt), width / 2 + 150, 135 + (k * 12), ability.getHex());
+                    graphics.centeredText(font, ability.getName(nbt), width / 2 + 150, 135 + (k * 12), (ability.getHex() | 0xFF000000));
                 }
             }
         }
@@ -208,7 +200,7 @@ public class AbilitySelectionGui extends Screen {
      * @param abilities
      * @param nbt
      */
-    private void displayButtons(GuiGraphics graphics, Button[] buttons, ArrayList<Ability> abilities, CompoundTag nbt, Player player) {
+    private void displayButtons(GuiGraphicsExtractor graphics, Button[] buttons, ArrayList<Ability> abilities, CompoundTag nbt, Player player) {
         for (Button button : buttons) {
             button.active = false;
         }
@@ -226,14 +218,14 @@ public class AbilitySelectionGui extends Screen {
     }
 
 
-    public void renderComponentTooltip(GuiGraphics graphics,Font font, List<Component> text, int mouseX, int mouseY) {
-        graphics.renderComponentTooltip(font, text, mouseX, mouseY);
+    public void renderComponentTooltip(GuiGraphicsExtractor graphics,Font font, List<Component> text, int mouseX, int mouseY) {
+        graphics.setComponentTooltipForNextFrame(font, text, mouseX, mouseY);
     }
 
-    private void drawTooltips(GuiGraphics graphics, Button[] buttons, ArrayList<Ability> abilities, int mouseX, int mouseY) {
+    private void drawTooltips(GuiGraphicsExtractor graphics, Button[] buttons, ArrayList<Ability> abilities, int mouseX, int mouseY) {
         Player player = this.minecraft.player;
-        ItemStack stack = player.getInventory().getSelected();
-        CompoundTag nbt = stack.getOrCreateTag();
+        ItemStack stack = player.getInventory().getSelectedItem();
+        CompoundTag nbt = NBTUtil.loadStackNBT(stack);
 
         for (int i = 0; i < buttons.length; i++) {
             if (buttons[i].isHoveredOrFocused()) {
@@ -242,10 +234,10 @@ public class AbilitySelectionGui extends Screen {
                 list.add("");
                 list.add(I18n.get("enhancedarmaments.abilities.info." + abilities.get(i).getName()));
                 list.add("");
-                if (EAUtil.canEnhanceWeapon(stack.getItem())) {
+                if (EAUtil.canEnhanceWeapon(stack)) {
                     if (i == 0)//FIRE
                     {
-                        float chance = (float) (1.0 / (EAConfig.firechance)) * 100;
+                        float chance = (float) (1.0 / (EAConfig.DATA.firechance)) * 100;
                         float currentduration = (Ability.FIRE.getLevel(nbt) + Ability.FIRE.getLevel(nbt) * 4) / 4;
                         float nextlevelduration = (Ability.FIRE.getLevel(nbt) + 1 + (Ability.FIRE.getLevel(nbt) + 1) * 4) / 4;
                         int c = (int) chance;
@@ -270,7 +262,7 @@ public class AbilitySelectionGui extends Screen {
                     }
                     if (i == 1)//FROST
                     {
-                        float chance = (float) (1.0 / (EAConfig.frostchance)) * 100;
+                        float chance = (float) (1.0 / (EAConfig.DATA.frostchance)) * 100;
                         float currentduration = (Ability.FROST.getLevel(nbt) + Ability.FROST.getLevel(nbt) * 4) / 3;
                         float nextlevelduration = (Ability.FROST.getLevel(nbt) + 1 + (Ability.FROST.getLevel(nbt) + 1) * 4) / 3;
                         int c = (int) chance;
@@ -295,7 +287,7 @@ public class AbilitySelectionGui extends Screen {
                     }
                     if (i == 2)//POISON
                     {
-                        float chance = (float) (1.0 / (EAConfig.poisonchance)) * 100;
+                        float chance = (float) (1.0 / (EAConfig.DATA.poisonchance)) * 100;
                         float currentduration = (Ability.POISON.getLevel(nbt) + Ability.POISON.getLevel(nbt) * 4) / 2;
                         float nextlevelduration = (Ability.POISON.getLevel(nbt) + 1 + (Ability.POISON.getLevel(nbt) + 1) * 4) / 2;
                         int c = (int) chance;
@@ -320,7 +312,7 @@ public class AbilitySelectionGui extends Screen {
                     }
                     if (i == 3)//INNATE
                     {
-                        float chance = (float) ((1.0 / (EAConfig.innatechance)) * 100);
+                        float chance = (float) ((1.0 / (EAConfig.DATA.innatechance)) * 100);
                         float currentduration = (Ability.INNATE.getLevel(nbt) + Ability.INNATE.getLevel(nbt) * 4) / 3;
                         float nextlevelduration = (Ability.INNATE.getLevel(nbt) + 1 + (Ability.INNATE.getLevel(nbt) + 1) * 4) / 3;
                         float currentbleedingspeed = (Ability.INNATE.getLevel(nbt));
@@ -350,7 +342,7 @@ public class AbilitySelectionGui extends Screen {
                     }
                     if (i == 4)//BOMBASTIC
                     {
-                        float chance = (float) ((1.0 / (EAConfig.bombasticchance)) * 100);
+                        float chance = (float) ((1.0 / (EAConfig.DATA.bombasticchance)) * 100);
                         float currentexplosionintensity = (Ability.BOMBASTIC.getLevel(nbt));
                         float nextlevelexplosionintensity = (Ability.BOMBASTIC.getLevel(nbt) + 1);
                         int c = (int) chance;
@@ -375,7 +367,7 @@ public class AbilitySelectionGui extends Screen {
                     }
                     if (i == 5)//CRITICAL_POINT
                     {
-                        float chance = (float) ((1.0 / (EAConfig.criticalpointchance)) * 100);
+                        float chance = (float) ((1.0 / (EAConfig.DATA.criticalpointchance)) * 100);
                         float currentdamage = (Ability.CRITICAL_POINT.getLevel(nbt) * 17);
                         float nextleveldamage = ((Ability.CRITICAL_POINT.getLevel(nbt) + 1) * 17);
                         int c = (int) chance;
@@ -451,10 +443,10 @@ public class AbilitySelectionGui extends Screen {
                         }
 
                     }
-                } else if (EAUtil.canEnhanceArmor(stack.getItem())) {
+                } else if (EAUtil.canEnhanceArmor(stack)) {
                     if (i == 0)//MOLTEN
                     {
-                        float chance = (float) (1.0 / (EAConfig.moltenchance)) * 100;
+                        float chance = (float) (1.0 / (EAConfig.DATA.moltenchance)) * 100;
                         float currentduration = (Ability.MOLTEN.getLevel(nbt) + Ability.MOLTEN.getLevel(nbt) * 5) / 4;
                         float nextlevelduration = (Ability.MOLTEN.getLevel(nbt) + 1 + (Ability.MOLTEN.getLevel(nbt) + 1) * 5) / 4;
                         int c = (int) chance;
@@ -479,7 +471,7 @@ public class AbilitySelectionGui extends Screen {
                     }
                     if (i == 1)//FROZEN
                     {
-                        float chance = (float) (1.0 / (EAConfig.frozenchance)) * 100;
+                        float chance = (float) (1.0 / (EAConfig.DATA.frozenchance)) * 100;
                         float currentduration = (Ability.FROZEN.getLevel(nbt) + Ability.FROZEN.getLevel(nbt) * 5) / 6;
                         float nextlevelduration = (Ability.FROZEN.getLevel(nbt) + 1 + (Ability.FROZEN.getLevel(nbt) + 1) * 5) / 6;
                         int c = (int) chance;
@@ -504,7 +496,7 @@ public class AbilitySelectionGui extends Screen {
                     }
                     if (i == 2)//TOXIC
                     {
-                        float chance = (float) (1.0 / (EAConfig.toxicchance)) * 100;
+                        float chance = (float) (1.0 / (EAConfig.DATA.toxicchance)) * 100;
                         float currentduration = (Ability.TOXIC.getLevel(nbt) + Ability.TOXIC.getLevel(nbt) * 4) / 4;
                         float nextlevelduration = (Ability.TOXIC.getLevel(nbt) + 1 + (Ability.TOXIC.getLevel(nbt) + 1) * 4) / 4;
                         int c = (int) chance;
@@ -560,7 +552,7 @@ public class AbilitySelectionGui extends Screen {
                     }
                     if (i == 5)//HARDENED
                     {
-                        float chance = (float) ((1.0 / (EAConfig.hardenedchance)) * 100);
+                        float chance = (float) ((1.0 / (EAConfig.DATA.hardenedchance)) * 100);
 
                         if (!(Ability.HARDENED.hasAbility(nbt))) {
                             if (buttons[i].isActive()) {
@@ -575,7 +567,7 @@ public class AbilitySelectionGui extends Screen {
                     }
                     if (i == 6)//ADRENALINE
                     {
-                        float chance = (float) (1.0 / (EAConfig.adrenalinechance)) * 100;
+                        float chance = (float) (1.0 / (EAConfig.DATA.adrenalinechance)) * 100;
                         float currentduration = (Ability.ADRENALINE.getLevel(nbt) + Ability.ADRENALINE.getLevel(nbt) * 5) / 3;
                         float nextlevelduration = (Ability.ADRENALINE.getLevel(nbt) + 1 + (Ability.ADRENALINE.getLevel(nbt) + 1) * 5) / 3;
                         int c = (int) chance;
