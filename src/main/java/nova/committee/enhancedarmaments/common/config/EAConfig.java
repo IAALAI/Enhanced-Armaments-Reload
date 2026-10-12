@@ -17,9 +17,7 @@ import java.util.List;
 
 public final class EAConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static Path configFile() {
-        return FabricLoader.getInstance().getConfigDir().resolve("enhancedarmaments/common.json");
-    }
+    private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("enhancedarmaments/common.json");
 
     public static File DATA = new File();
 
@@ -27,7 +25,6 @@ public final class EAConfig {
     }
 
     public static void load() {
-        Path FILE = configFile();
         try {
             Files.createDirectories(FILE.getParent());
             if (Files.notExists(FILE)) {
@@ -48,7 +45,6 @@ public final class EAConfig {
     }
 
     public static void save() {
-        Path FILE = configFile();
         try {
             Files.createDirectories(FILE.getParent());
             try (Writer writer = Files.newBufferedWriter(FILE, StandardCharsets.UTF_8)) {
@@ -68,6 +64,8 @@ public final class EAConfig {
         public double experienceMultiplier = 1.8;
         @SerializedName("showDurabilityInTooltip")
         public boolean showDurabilityInTooltip = true;
+        @SerializedName("showExpGetInChat")
+        public boolean showExpGetInChat = true;
         @SerializedName("onlyModdedItems")
         public boolean onlyModdedItems = false;
         @SerializedName("itemBlacklist")
@@ -89,6 +87,7 @@ public final class EAConfig {
         public boolean moltenAbility = true;
         public boolean frozenAbility = true;
         public boolean toxicAbility = true;
+        public boolean eternalGuardianAbility = true;
         public boolean adrenalineAbility = true;
         public boolean frostwalkerAbility = true;
         public boolean beastialAbility = true;
@@ -100,7 +99,8 @@ public final class EAConfig {
         public double poisonchance = 4;
         public double innatechance = 4;
         public double bombasticchance = 4;
-        public double criticalpointchance = 4;
+        public double criticalpointchance = 20;
+        public double etherealchance = 4;
         public double moltenchance = 4;
         public double frostwalkerchance = 4;
         public double frozenchance = 4;
@@ -108,5 +108,7 @@ public final class EAConfig {
         public double adrenalinechance = 4;
         public double hardenedchance = 4;
 
+        /** Long-run proc rate for each armor piece's rarity damage reduction. */
+        public double armorReductionProcChance = 0.20D;
     }
 }

@@ -14,6 +14,7 @@ import nova.committee.enhancedarmaments.common.config.EAConfig;
 import nova.committee.enhancedarmaments.core.Ability;
 import nova.committee.enhancedarmaments.core.Experience;
 import nova.committee.enhancedarmaments.core.Rarity;
+import nova.committee.enhancedarmaments.core.RarityFusion;
 import nova.committee.enhancedarmaments.util.EAUtil;
 import nova.committee.enhancedarmaments.util.NBTUtil;
 
@@ -28,6 +29,10 @@ public final class ItemTooltipHandler {
             return;
         }
         CompoundTag nbt = NBTUtil.loadStackNBT(stack);
+        if (RarityFusion.isPending(nbt)) {
+            appendFusionPreview(stack, nbt, tooltip);
+            return;
+        }
         if (!Experience.isEnabled(nbt)) {
             return;
         }
@@ -69,6 +74,30 @@ public final class ItemTooltipHandler {
         }
     }
 
+    private static void appendFusionPreview(ItemStack stack, CompoundTag nbt, List<Component> tooltip) {
+        tooltip.set(0, Component.literal(stack.getDisplayName().getString() + ChatFormatting.GOLD + " ("
+                + ChatFormatting.ITALIC + I18n.get("enhancedarmaments.misc.fusion.pending") + ")"));
+        tooltip.add(Component.literal(ChatFormatting.GOLD + I18n.get("enhancedarmaments.misc.fusion.take_to_reveal")));
+        for (int tier = 1; tier <= Rarity.getTierCount(); tier++) {
+            double chance = RarityFusion.getPreviewChance(nbt, tier);
+            if (chance <= 0.0000001D) {
+                continue;
+            }
+            tooltip.add(Component.literal(ChatFormatting.GRAY + I18n.get(
+                    "enhancedarmaments.rarity." + Rarity.getNameForTier(tier)) + ": "
+                    + ChatFormatting.WHITE + String.format("%.2f%%", chance * 100D)));
+        }
+        int level = Experience.getLevel(nbt);
+        tooltip.add(Component.literal(I18n.get("enhancedarmaments.misc.level") + ": " + ChatFormatting.WHITE + level));
+        if (level >= EAConfig.DATA.maxLevel) {
+            tooltip.add(Component.literal(I18n.get("enhancedarmaments.misc.experience") + ": "
+                    + I18n.get("enhancedarmaments.misc.max")));
+        } else {
+            tooltip.add(Component.literal(I18n.get("enhancedarmaments.misc.experience") + ": "
+                    + Experience.getExperience(nbt) + " / " + Experience.getMaxLevelExp(level)));
+        }
+    }
+
     private static void appendRangedBonus(ItemStack stack, Rarity rarity, List<Component> tooltip) {
         if (EAUtil.canEnhanceRanged(stack) && rarity.getEffect() != 0) {
             String bonus = String.format("%.1f", rarity.getEffect() / 3 * 100);
@@ -99,7 +128,9 @@ public final class ItemTooltipHandler {
             return;
         }
         String p = String.format("%.1f", 100 - (100 / (1.0F + (rarity.getEffect() / 5F))));
+        String chance = String.format("%.0f%%", Math.max(0D, Math.min(1D, EAConfig.DATA.armorReductionProcChance)) * 100D);
         tooltip.add(Component.literal(" " + ChatFormatting.BLUE + "+" + rarity.getColor() + p + ChatFormatting.BLUE + "% "
-                + I18n.get("enhancedarmaments.misc.rarity.armorreduction")));
+                + I18n.get("enhancedarmaments.misc.rarity.armorreduction") + ChatFormatting.GRAY + " (" + chance + " "
+                + I18n.get("enhancedarmaments.misc.rarity.procchance") + ")"));
     }
 }

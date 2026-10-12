@@ -9,13 +9,15 @@ import nova.committee.enhancedarmaments.util.RandomCollection;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class Rarity {
-
-    public static Rarity DEFAULT = new Rarity("default", "", 0, 0, 0);
-
+    private static final List<String> TIER_NAMES = List.of(
+            "basic", "uncommon", "rare", "ultra_rare", "legendary", "archaic"
+    );
+    public static final Rarity DEFAULT = new Rarity("default", "", 0, 0, 0);
     public static final List<Rarity> RARITIES = new ArrayList<>();
-    public static final RandomCollection<Rarity> RANDOM_RARITIES = new RandomCollection<Rarity>();
+    public static final RandomCollection<Rarity> RANDOM_RARITIES = new RandomCollection<>();
 
     private final String name;
     private final ChatFormatting color;
@@ -24,54 +26,58 @@ public class Rarity {
     private final double effect;
     private boolean enabled = true;
 
-    Rarity(String name, String color, int hex, double weight, double effect) {
+    public Rarity(String name, String color, int hex, double weight, double effect) {
         this.name = name;
-        ChatFormatting parsed = null;
-        for (ChatFormatting candidate : ChatFormatting.values()) {
-            if (candidate.name().equalsIgnoreCase(color)) { parsed = candidate; break; }
-        }
-        this.color = parsed == null ? ChatFormatting.WHITE : parsed;
+        this.color = parseColor(color);
         this.hex = hex;
         this.weight = weight;
         this.effect = effect;
     }
 
-    /**
-     * 根据权重返回上述枚举之一
-     *
-     * @param random
-     * @return
-     */
-    public static void clear() { RARITIES.clear(); RANDOM_RARITIES.clear(); }
-
-    public static boolean hasRandomRarities() { return !RANDOM_RARITIES.isEmpty(); }
-
-    public static Rarity getRandomRarity(RandomSource random) {
-        return RANDOM_RARITIES.next(random).orElse(DEFAULT);
+    public static Optional<Rarity> getRandomRarity(RandomSource random) {
+        return RANDOM_RARITIES.next(random);
     }
 
-    private static Rarity getByName(CompoundTag nbt){
-        final Rarity[] rarity1 = new Rarity[1];
-        RARITIES.stream()
-                .filter(rarity -> rarity.getName().equalsIgnoreCase(nbt.getStringOr("RARITY", "")))
-                .findFirst()
-                .ifPresent(
-                        rarity -> rarity1[0] = rarity);
-        return rarity1[0] == null ? DEFAULT : rarity1[0];
+    public static boolean hasRandomRarities() {
+        return !RANDOM_RARITIES.isEmpty();
     }
 
-    /**
-     * 检索应用的稀有度。
-     *
-     * @param nbt
-     * @return
-     */
     public static Rarity getRarity(CompoundTag nbt) {
-        return nbt != null && nbt.contains("RARITY") ? getByName(nbt) : DEFAULT;
+        if (nbt == null || !nbt.contains("RARITY")) {
+            return DEFAULT;
+        }
+        String stored = nbt.getStringOr("RARITY", "");
+        for (Rarity rarity : RARITIES) {
+            if (rarity.getName().equalsIgnoreCase(stored)) {
+                return rarity;
+            }
+        }
+        return DEFAULT;
     }
 
     public static void setRarity(CompoundTag nbt, String rarityName) {
         nbt.putString("RARITY", rarityName);
+    }
+
+    public static int getTier(CompoundTag nbt) {
+        if (nbt == null) {
+            return 0;
+        }
+        String stored = nbt.getStringOr("RARITY", "");
+        for (int i = 0; i < TIER_NAMES.size(); i++) {
+            if (TIER_NAMES.get(i).equalsIgnoreCase(stored)) {
+                return i + 1;
+            }
+        }
+        return 0;
+    }
+
+    public static String getNameForTier(int tier) {
+        return tier >= 1 && tier <= TIER_NAMES.size() ? TIER_NAMES.get(tier - 1) : "default";
+    }
+
+    public static int getTierCount() {
+        return TIER_NAMES.size();
     }
 
     public void setRarity(CompoundTag nbt) {
@@ -83,7 +89,7 @@ public class Rarity {
     }
 
     public ChatFormatting getColor() {
-        return color;
+        return color == null ? ChatFormatting.WHITE : color;
     }
 
     public int getHex() {
@@ -105,19 +111,31 @@ public class Rarity {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
+
+    private static ChatFormatting parseColor(String color) {
+        if (color == null || color.isEmpty()) {
+            return ChatFormatting.WHITE;
+        }
+        try {
+            return ChatFormatting.valueOf(color.trim().toUpperCase().replace(' ', '_'));
+        } catch (IllegalArgumentException ignored) {
+            return ChatFormatting.WHITE;
+        }
+    }
+
     public static Rarity loadFromJson(JsonObject json) {
-        var name1 = GsonHelper.getAsString(json, "name");
-        var color1 = GsonHelper.getAsString(json, "color");
-        var hex1 = GsonHelper.getAsInt(json, "hex");
-        var weight1 = GsonHelper.getAsDouble(json, "weight", 0.25D);
-        var effect1 = GsonHelper.getAsDouble(json, "effect", 0.3D);
-
-        var rarity = new Rarity(name1, color1, hex1, weight1, effect1);
-
-        var enabled = GsonHelper.getAsBoolean(json, "enabled", true);
-
-        rarity.setEnabled(enabled);
-
+        String name1 = GsonHelper.getAsString(json, "name");
+        String color1 = GsonHelper.getAsString(json, "color");
+        int hex1 = GsonHelper.getAsInt(json, "hex");
+        double weight1 = GsonHelper.getAsDouble(json, "weight", 0.25D);
+        double effect1 = GsonHelper.getAsDouble(json, "effect", 0.3D);
+        Rarity rarity = new Rarity(name1, color1, hex1, weight1, effect1);
+        rarity.setEnabled(GsonHelper.getAsBoolean(json, "enabled", true));
         return rarity;
+    }
+
+    public static void clear() {
+        RARITIES.clear();
+        RANDOM_RARITIES.clear();
     }
 }

@@ -19,12 +19,8 @@ import net.minecraft.world.item.equipment.Equippable;
 import nova.committee.enhancedarmaments.common.config.EAConfig;
 
 import java.util.List;
-import java.util.Set;
 
 public final class EAUtil {
-    private static final Set<String> LEGACY_VANILLA_EXCLUSIONS = Set.of(
-            "bow", "chainmail_boots", "chainmail_chestplate", "chainmail_helmet", "chainmail_leggings", "crossbow", "diamond_axe", "diamond_boots", "diamond_chestplate", "diamond_helmet", "diamond_hoe", "diamond_leggings", "diamond_sword", "golden_axe", "golden_boots", "golden_chestplate", "golden_helmet", "golden_hoe", "golden_leggings", "golden_sword", "iron_axe", "iron_boots", "iron_chestplate", "iron_helmet", "iron_hoe", "iron_leggings", "iron_sword", "netherite_axe", "netherite_boots", "netherite_chestplate", "netherite_helmet", "netherite_hoe", "netherite_leggings", "netherite_sword", "stone_axe", "stone_hoe", "stone_sword", "trident", "wooden_axe", "wooden_hoe", "wooden_sword");
-
     private EAUtil() {
     }
 
@@ -35,31 +31,52 @@ public final class EAUtil {
         Item item = stack.getItem();
         Identifier id = BuiltInRegistries.ITEM.getKey(item);
 
-        if (EAConfig.DATA.onlyModdedItems && "minecraft".equals(id.getNamespace())
-                && LEGACY_VANILLA_EXCLUSIONS.contains(id.getPath())) return false;
-        if (EAConfig.DATA.extraItems.contains(id.toString())) return true;
+        if (!EAConfig.DATA.itemWhitelist.isEmpty()) {
+            return EAConfig.DATA.itemWhitelist.contains(id.toString());
+        }
+        if (EAConfig.DATA.itemBlacklist.contains(id.toString())) {
+            return false;
+        }
+        if (EAConfig.DATA.extraItems.contains(id.toString())) {
+            return true;
+        }
+        if (EAConfig.DATA.onlyModdedItems && "minecraft".equals(id.getNamespace())) {
+            return false;
+        }
         return isEnhanceableKind(stack);
     }
 
     private static boolean isEnhanceableKind(ItemStack stack) {
-        Item item = stack.getItem();
-        return item instanceof BowItem || item instanceof CrossbowItem || item instanceof TridentItem
-                || isArmorKind(stack) || tagged(stack, ItemTags.SWORDS)
-                || tagged(stack, ItemTags.AXES) || tagged(stack, ItemTags.HOES);
+        return canEnhanceMelee(stack) || canEnhanceRanged(stack) || canEnhanceArmor(stack);
     }
 
     public static boolean canEnhanceWeapon(ItemStack stack) {
-        return canEnhance(stack) && !isArmorKind(stack);
+        return canEnhance(stack) && !canEnhanceArmor(stack);
     }
 
     public static boolean canEnhanceMelee(ItemStack stack) {
-        return canEnhanceWeapon(stack) && !(stack.getItem() instanceof BowItem)
-                && !(stack.getItem() instanceof CrossbowItem);
+        if (stack == null || stack.isEmpty() || canEnhanceRanged(stack) || canEnhanceArmor(stack)) {
+            return false;
+        }
+        return tagged(stack, ItemTags.SWORDS)
+                || tagged(stack, ItemTags.AXES)
+                || tagged(stack, ItemTags.HOES)
+                || tagged(stack, ItemTags.SHARP_WEAPON_ENCHANTABLE)
+                || tagged(stack, ItemTags.MELEE_WEAPON_ENCHANTABLE)
+                || stack.has(DataComponents.WEAPON);
     }
 
     public static boolean canEnhanceRanged(ItemStack stack) {
-        return canEnhance(stack) && (stack.getItem() instanceof BowItem
-                || stack.getItem() instanceof CrossbowItem || stack.getItem() instanceof TridentItem);
+        if (stack == null || stack.isEmpty()) {
+            return false;
+        }
+        Item item = stack.getItem();
+        return item instanceof BowItem
+                || item instanceof CrossbowItem
+                || item instanceof TridentItem
+                || tagged(stack, ItemTags.BOW_ENCHANTABLE)
+                || tagged(stack, ItemTags.CROSSBOW_ENCHANTABLE)
+                || tagged(stack, ItemTags.TRIDENT_ENCHANTABLE);
     }
 
     public static boolean isArrow(ItemStack stack) {
@@ -67,14 +84,12 @@ public final class EAUtil {
     }
 
     public static boolean canEnhanceArmor(ItemStack stack) {
-        return canEnhance(stack) && isArmorKind(stack);
-    }
-
-    private static boolean isArmorKind(ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
             return false;
         }
-        if (!stack.has(DataComponents.ATTRIBUTE_MODIFIERS)) return false;
+        if (stack.getItem() instanceof ShieldItem) {
+            return true;
+        }
         Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
         if (equippable != null) {
             EquipmentSlot slot = equippable.slot();

@@ -42,12 +42,12 @@ public final class RarityHandler {
         if (hasJson()) {
             return;
         }
-        write("basic", "white", 0xFFFFFF, 0.5D, 0D, true);
-        write("uncommon", "dark_green", 0x00AA00, 0.18D, 0.155D, true);
-        write("rare", "aqua", 0x55FFFF, 0.1D, 0.305D, true);
-        write("ultra_rare", "dark_purple", 0xAA00AA, 0.05D, 0.38D, true);
-        write("legendary", "gold", 0xFFAA00, 0.02D, 0.57D, true);
-        write("archaic", "red", 0xFF55FF, 0.01D, 0.81D, true);
+        write("basic", "white", 0xFFFFFF, 0.7422D, 0D, true);
+        write("uncommon", "dark_green", 0x00AA00, 0.16D, 0.155D, true);
+        write("rare", "aqua", 0x55FFFF, 0.065D, 0.305D, true);
+        write("ultra_rare", "dark_purple", 0xAA00AA, 0.024D, 0.38D, true);
+        write("legendary", "gold", 0xFFAA00, 0.0072D, 0.50D, true);
+        write("archaic", "red", 0xFF55FF, 0.0016D, 0.65D, true);
     }
 
     private static boolean hasJson() throws IOException {

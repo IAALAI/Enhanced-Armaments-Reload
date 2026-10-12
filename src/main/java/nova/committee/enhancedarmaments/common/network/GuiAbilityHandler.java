@@ -5,30 +5,60 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import nova.committee.enhancedarmaments.core.Ability;
 import nova.committee.enhancedarmaments.core.Experience;
+import nova.committee.enhancedarmaments.init.handler.CombatStateManager;
 import nova.committee.enhancedarmaments.util.EAUtil;
 import nova.committee.enhancedarmaments.util.NBTUtil;
 
 public final class GuiAbilityHandler {
-    private GuiAbilityHandler() { }
+    private GuiAbilityHandler() {
+    }
+
     public static void handle(ServerPlayer player, String abilityId, int selectedSlot) {
-        if (selectedSlot != player.getInventory().getSelectedSlot()) return;
-        ItemStack stack = player.getInventory().getSelectedItem();
-        if (!EAUtil.canEnhance(stack)) return;
-        CompoundTag nbt = NBTUtil.loadStackNBT(stack);
-        Ability ability = Ability.byId(abilityId).orElse(null);
-        if (!Experience.isEnabled(nbt) || ability == null || !ability.isEnabled()) return;
-        if (!(EAUtil.canEnhanceWeapon(stack) && "weapon".equals(ability.getCategory()))
-                && !(EAUtil.canEnhanceArmor(stack) && "armor".equals(ability.getCategory()))) return;
-        if (ability.hasAbility(nbt)) {
-            if (!ability.canUpgradeLevel(nbt) || Experience.getAbilityTokens(nbt) < ability.getTier()) return;
-            ability.setLevel(nbt, ability.getLevel(nbt) + 1);
-            Experience.setAbilityTokens(nbt, Experience.getAbilityTokens(nbt) - ability.getTier());
-        } else {
-            if (!ability.hasEnoughExp(player, nbt)) return;
-            ability.addAbility(nbt);
-            // Preserve the legacy post-purchase XP deduction (including its count-based formula).
-            if (!player.isCreative()) player.giveExperienceLevels(-ability.getExpLevel(nbt) + 1);
+        if (selectedSlot != player.getInventory().getSelectedSlot()) {
+            return;
         }
-        NBTUtil.saveStackNBT(stack, nbt);
+        ItemStack stack = player.getInventory().getSelectedItem();
+        if (stack.isEmpty()) {
+            return;
+        }
+        CompoundTag nbt = NBTUtil.loadStackNBT(stack);
+        if (!Experience.isEnabled(nbt)) {
+            return;
+        }
+        Ability ability = Ability.byId(abilityId).orElse(null);
+        if (ability == null || !ability.isEnabled() || ability.getMaxLevel() <= 0) {
+            return;
+        }
+        boolean categoryMatches = (EAUtil.canEnhanceWeapon(stack) && "weapon".equals(ability.getCategory()))
+                || (EAUtil.canEnhanceArmor(stack) && "armor".equals(ability.getCategory()));
+        if (!categoryMatches) {
+            return;
+        }
+        if (!ability.hasCapacityForNextLevel(nbt)) {
+            return;
+        }
+        int requiredLevels = ability.getExperienceLevelCost(nbt);
+        if (requiredLevels > player.experienceLevel && !player.isCreative()) {
+            return;
+        }
+
+        boolean changed = false;
+        if (ability.hasAbility(nbt)) {
+            if (ability.canUpgradeLevel(nbt)) {
+                ability.setLevel(nbt, ability.getLevel(nbt) + 1);
+                changed = true;
+            }
+        } else {
+            ability.addAbility(nbt);
+            changed = true;
+        }
+        if (changed) {
+            if (!player.isCreative()) {
+                player.giveExperienceLevels(-requiredLevels);
+            }
+            nbt.remove("TOKENS");
+            CombatStateManager.primeAbilityCooldown(player, ability, nbt);
+            NBTUtil.saveStackNBT(stack, nbt);
+        }
     }
 }

@@ -22,6 +22,8 @@ public abstract class LivingEntityHurtMixin {
             )
     )
     private float enhancedarmaments$wrapArmorAbsorb(LivingEntity self, DamageSource armorSource, float incoming, ServerLevel level, DamageSource source, float original) {
-        return this.getDamageAfterArmorAbsorb(armorSource, LivingHurtHandler.onHurt(self, source, incoming));
+        float withWeapon = LivingHurtHandler.beforeVanillaArmor(self, source, incoming);
+        float afterArmor = this.getDamageAfterArmorAbsorb(armorSource, withWeapon);
+        return LivingHurtHandler.afterVanillaArmor(self, source, afterArmor);
     }
 }

@@ -10,6 +10,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import nova.committee.enhancedarmaments.core.Experience;
+import nova.committee.enhancedarmaments.core.EquipmentDurability;
 import nova.committee.enhancedarmaments.util.EAUtil;
 import nova.committee.enhancedarmaments.util.NBTUtil;
 
@@ -39,9 +40,10 @@ public final class AddLevelCommand {
             if (Experience.canLevelUp(nbt)) {
                 Experience.setExperience(nbt, Experience.getExperience(nbt) + Experience.getNeededExpForNextLevel(nbt));
                 Experience.setLevel(nbt, Experience.getLevel(nbt) + 1);
-                Experience.setAbilityTokens(nbt, Experience.getAbilityTokens(nbt) + 1);
             }
         }
+        nbt.remove("TOKENS");
+        EquipmentDurability.synchronize(item, nbt);
         NBTUtil.saveStackNBT(item, nbt);
         player.setItemInHand(InteractionHand.MAIN_HAND, item);
         cmd.sendSuccess(() -> Component.translatable("enhancedarmaments.command.success"), true);
